@@ -21,6 +21,6 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Permisos de storage/cache
 RUN chmod -R 775 storage bootstrap/cache
 
-# Render inyecta $PORT
+# Render inyecta $PORT. Servidor PHP embebido con router (estable tras proxy).
 EXPOSE 8000
-CMD php artisan serve --host 0.0.0.0 --port ${PORT:-8000}
+CMD php -S 0.0.0.0:${PORT:-8000} server.php

@@ -41,6 +41,14 @@ Route::get('/diag', function () {
     $probe['tls_socket'] = $fp ? 'CONECTA' : "falla: $errno $errstr";
     if ($fp) { fclose($fp); }
 
+    // libmongoc version
+    ob_start(); phpinfo(INFO_MODULES); $info2 = ob_get_clean();
+    $libmongoc = preg_match('/libmongoc bundled version.*?([0-9][0-9.]+)/i', $info2, $mm) ? $mm[1] : '?';
+
+    // DSN en uso (oculta password)
+    $dsn = (string) env('MONGO_DSN');
+    $dsnSafe = preg_replace('#://([^:]+):([^@]+)@#', '://$1:***@', $dsn);
+
     $mongo = ['ok' => false];
     try {
         $client = \Illuminate\Support\Facades\DB::connection('mongodb')->getMongoClient();
@@ -48,14 +56,29 @@ Route::get('/diag', function () {
         foreach ($client->listDatabases() as $d) { $dbs[] = $d->getName(); }
         $mongo = ['ok' => true, 'dbs' => $dbs];
     } catch (\Throwable $e) {
-        $mongo = ['ok' => false, 'error' => substr($e->getMessage(), 0, 200)];
+        $mongo = ['ok' => false, 'error' => $e->getMessage()];
     }
+
+    // Prueba directa con Manager (sin Laravel) y timeout corto
+    $direct = ['ok' => false];
+    try {
+        $m = new \MongoDB\Driver\Manager($dsn, ['serverSelectionTimeoutMS' => 8000]);
+        $cmd = new \MongoDB\Driver\Command(['ping' => 1]);
+        $m->executeCommand('admin', $cmd);
+        $direct = ['ok' => true];
+    } catch (\Throwable $e) {
+        $direct = ['ok' => false, 'error' => $e->getMessage()];
+    }
+
     return response()->json([
         'mongodb_ext' => phpversion('mongodb'),
+        'libmongoc' => $libmongoc,
         'tls_line' => $tls,
         'openssl_ext' => extension_loaded('openssl'),
+        'dsn' => $dsnSafe,
         'probe' => $probe,
         'mongo' => $mongo,
+        'direct' => $direct,
     ]);
 });
 

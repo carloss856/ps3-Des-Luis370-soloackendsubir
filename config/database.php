@@ -91,10 +91,15 @@ return [
             'database' => env('MONGO_DATABASE', 'luis370Db'),
             'username' => env('MONGO_USERNAME'),
             'password' => env('MONGO_PASSWORD'),
-            'options' => [
+            // OJO: no forzar 'ssl' aquí. Pasar ssl=false como uriOption ANULA el
+            // tls=true del DSN de Atlas -> el driver intenta conexión en claro y
+            // Atlas la cierra ("Server closed connection. calling hello").
+            // El TLS se controla desde el propio MONGO_DSN (tls=true).
+            'options' => array_filter([
                 'authSource' => env('MONGO_AUTH_DATABASE', 'admin'),
-                'ssl' => env('MONGO_SSL', false),
-            ],
+                'ssl' => env('MONGO_SSL'), // null si no está definida -> no se envía
+                'serverSelectionTimeoutMS' => (int) env('MONGO_SST_MS', 10000),
+            ], fn ($v) => $v !== null),
         ],
 
         'sqlsrv' => [

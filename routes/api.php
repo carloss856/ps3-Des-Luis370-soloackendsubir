@@ -24,64 +24,6 @@ use App\Http\Controllers\StatsController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\RbacController;
 
-// Diagnóstico temporal: TLS del driver mongodb. Borrar después.
-Route::get('/diag', function () {
-    ob_start();
-    phpinfo(INFO_MODULES);
-    $info = ob_get_clean();
-    $tls = 'no encontrado';
-    foreach (['libmongoc SSL', 'libmongoc crypto', 'SSL library version', 'crypto library'] as $needle) {
-        if (preg_match('/' . preg_quote($needle, '/') . '.*$/mi', $info, $m)) { $tls = trim($m[0]); break; }
-    }
-    // Prueba TLS cruda al shard (sin el driver mongo): aísla red/Atlas vs driver
-    $shard = 'ac-tiinlye-shard-00-00.4kzogsl.mongodb.net';
-    $probe = ['ipv4' => @gethostbyname($shard)];
-    $ctx = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'peer_name' => $shard]]);
-    $fp = @stream_socket_client('tls://' . $shard . ':27017', $errno, $errstr, 8, STREAM_CLIENT_CONNECT, $ctx);
-    $probe['tls_socket'] = $fp ? 'CONECTA' : "falla: $errno $errstr";
-    if ($fp) { fclose($fp); }
-
-    // libmongoc version
-    ob_start(); phpinfo(INFO_MODULES); $info2 = ob_get_clean();
-    $libmongoc = preg_match('/libmongoc bundled version.*?([0-9][0-9.]+)/i', $info2, $mm) ? $mm[1] : '?';
-
-    // DSN en uso (oculta password)
-    $dsn = (string) env('MONGO_DSN');
-    $dsnSafe = preg_replace('#://([^:]+):([^@]+)@#', '://$1:***@', $dsn);
-
-    $mongo = ['ok' => false];
-    try {
-        $client = \Illuminate\Support\Facades\DB::connection('mongodb')->getMongoClient();
-        $dbs = [];
-        foreach ($client->listDatabases() as $d) { $dbs[] = $d->getName(); }
-        $mongo = ['ok' => true, 'dbs' => $dbs];
-    } catch (\Throwable $e) {
-        $mongo = ['ok' => false, 'error' => $e->getMessage()];
-    }
-
-    // Prueba directa con Manager (sin Laravel) y timeout corto
-    $direct = ['ok' => false];
-    try {
-        $m = new \MongoDB\Driver\Manager($dsn, ['serverSelectionTimeoutMS' => 8000]);
-        $cmd = new \MongoDB\Driver\Command(['ping' => 1]);
-        $m->executeCommand('admin', $cmd);
-        $direct = ['ok' => true];
-    } catch (\Throwable $e) {
-        $direct = ['ok' => false, 'error' => $e->getMessage()];
-    }
-
-    return response()->json([
-        'mongodb_ext' => phpversion('mongodb'),
-        'libmongoc' => $libmongoc,
-        'tls_line' => $tls,
-        'openssl_ext' => extension_loaded('openssl'),
-        'dsn' => $dsnSafe,
-        'probe' => $probe,
-        'mongo' => $mongo,
-        'direct' => $direct,
-    ]);
-});
-
 // Rutas públicas
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

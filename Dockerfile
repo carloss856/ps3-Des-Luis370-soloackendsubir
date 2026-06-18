@@ -3,7 +3,8 @@ FROM php:8.3-cli
 
 # Dependencias del sistema + extensión MongoDB de PHP
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev libssl-dev \
+    git unzip libzip-dev libssl-dev ca-certificates openssl \
+ && update-ca-certificates \
  && docker-php-ext-install zip \
  && pecl install mongodb \
  && docker-php-ext-enable mongodb \

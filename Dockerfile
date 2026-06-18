@@ -23,8 +23,17 @@ COPY . .
 # Instalar dependencias de producción
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Permisos de storage/cache
-RUN chmod -R 775 storage bootstrap/cache
+# Crear directorios de runtime (el .dockerignore excluye su contenido, así que
+# no existen tras COPY -> el driver 'file' de sesión/cache fallaría con 500).
+RUN mkdir -p storage/framework/sessions storage/framework/views \
+        storage/framework/cache/data storage/logs \
+ && chmod -R 775 storage bootstrap/cache
+
+# API stateless con auth por token: evitar drivers que toquen disco/BD.
+# (Render puede sobreescribir estas vars desde el dashboard si hace falta.)
+ENV SESSION_DRIVER=cookie \
+    CACHE_STORE=array \
+    QUEUE_CONNECTION=sync
 
 # Render inyecta $PORT. Servidor PHP embebido con router (estable tras proxy).
 EXPOSE 8000

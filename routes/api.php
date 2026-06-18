@@ -33,10 +33,20 @@ Route::get('/diag', function () {
     foreach (['libmongoc SSL', 'libmongoc crypto', 'SSL library version', 'crypto library'] as $needle) {
         if (preg_match('/' . preg_quote($needle, '/') . '.*$/mi', $info, $m)) { $tls = trim($m[0]); break; }
     }
+    $mongo = ['ok' => false];
+    try {
+        $client = \Illuminate\Support\Facades\DB::connection('mongodb')->getMongoClient();
+        $dbs = [];
+        foreach ($client->listDatabases() as $d) { $dbs[] = $d->getName(); }
+        $mongo = ['ok' => true, 'dbs' => $dbs];
+    } catch (\Throwable $e) {
+        $mongo = ['ok' => false, 'error' => substr($e->getMessage(), 0, 200)];
+    }
     return response()->json([
         'mongodb_ext' => phpversion('mongodb'),
         'tls_line' => $tls,
         'openssl_ext' => extension_loaded('openssl'),
+        'mongo' => $mongo,
     ]);
 });
 

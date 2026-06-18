@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
  && php --ri mongodb | grep -i ssl \
  && rm -rf /var/lib/apt/lists/*
 
+# Forzar preferencia IPv4 (Render egresa IPv6; el allowlist de Atlas es IPv4 → si va por IPv6, Atlas cierra)
+RUN printf 'precedence ::ffff:0:0/96 100\n' >> /etc/gai.conf
+
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

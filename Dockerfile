@@ -23,4 +23,4 @@ RUN chmod -R 775 storage bootstrap/cache
 
 # Render inyecta $PORT. Servidor PHP embebido con router (estable tras proxy).
 EXPOSE 8000
-CMD php -S 0.0.0.0:${PORT:-8000} server.php
+CMD php -d display_errors=1 -d display_startup_errors=1 -d error_reporting=E_ALL -d log_errors=1 -S 0.0.0.0:${PORT:-8000} server.php

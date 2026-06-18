@@ -33,6 +33,14 @@ Route::get('/diag', function () {
     foreach (['libmongoc SSL', 'libmongoc crypto', 'SSL library version', 'crypto library'] as $needle) {
         if (preg_match('/' . preg_quote($needle, '/') . '.*$/mi', $info, $m)) { $tls = trim($m[0]); break; }
     }
+    // Prueba TLS cruda al shard (sin el driver mongo): aísla red/Atlas vs driver
+    $shard = 'ac-tiinlye-shard-00-00.4kzogsl.mongodb.net';
+    $probe = ['ipv4' => @gethostbyname($shard)];
+    $ctx = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'peer_name' => $shard]]);
+    $fp = @stream_socket_client('tls://' . $shard . ':27017', $errno, $errstr, 8, STREAM_CLIENT_CONNECT, $ctx);
+    $probe['tls_socket'] = $fp ? 'CONECTA' : "falla: $errno $errstr";
+    if ($fp) { fclose($fp); }
+
     $mongo = ['ok' => false];
     try {
         $client = \Illuminate\Support\Facades\DB::connection('mongodb')->getMongoClient();
@@ -46,6 +54,7 @@ Route::get('/diag', function () {
         'mongodb_ext' => phpversion('mongodb'),
         'tls_line' => $tls,
         'openssl_ext' => extension_loaded('openssl'),
+        'probe' => $probe,
         'mongo' => $mongo,
     ]);
 });

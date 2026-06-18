@@ -2,26 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 
+// Portada del API. Las rutas reales viven en routes/api.php (/api/*).
+// Nota: si SESSION_DRIVER no es 'cookie'/'array', el middleware web de Laravel
+// intenta escribir sesión en disco/BD y esta ruta puede dar 500 en Render.
 Route::get('/', function () {
-    // TEMP: marcador de build + captura del error real de la raíz.
-    try {
-        if (request()->boolean('whoami')) {
-            return response()->json([
-                'build' => 'b7',
-                'session_driver' => config('session.driver'),
-                'cache' => config('cache.default'),
-                'mongo_db' => config('database.connections.mongodb.database'),
-            ]);
-        }
-        return response()->json([
-            'app' => 'Luis370 API',
-            'status' => 'ok',
-            'docs' => 'usa /api/* para los endpoints',
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'error' => $e->getMessage(),
-            'where' => $e->getFile() . ':' . $e->getLine(),
-        ], 500);
-    }
+    return response()->json([
+        'app' => 'Luis370 API',
+        'status' => 'ok',
+        'docs' => 'usa /api/* para los endpoints',
+    ]);
 });

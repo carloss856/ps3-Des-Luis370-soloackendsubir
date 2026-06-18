@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     git unzip libzip-dev libssl-dev ca-certificates openssl pkg-config libcurl4-openssl-dev \
  && update-ca-certificates \
  && docker-php-ext-install zip \
- && pecl install mongodb \
+ && pecl install mongodb-2.1.4 \
  && docker-php-ext-enable mongodb \
  && php --ri mongodb | grep -i ssl \
  && rm -rf /var/lib/apt/lists/*

@@ -88,7 +88,7 @@ return [
             'dsn' => env('MONGO_DSN'),
             'host' => env('MONGO_HOST', '127.0.0.1'),
             'port' => env('MONGO_PORT', 27017),
-            'database' => env('MONGO_DATABASE', 'luis370Db'),
+            'database' => env('MONGO_DATABASE', 'inventluis370'),
             'username' => env('MONGO_USERNAME'),
             'password' => env('MONGO_PASSWORD'),
             // OJO: no forzar 'ssl' aquí. Pasar ssl=false como uriOption ANULA el

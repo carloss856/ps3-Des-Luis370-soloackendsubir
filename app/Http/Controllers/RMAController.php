@@ -15,24 +15,33 @@ class RMAController extends Controller
     // Listar todos los RMA
     public function index(Request $request)
     {
-        $me = Auth::user();
-        $role = Role::normalize($me ? ($me->tipo ?? $me->rol ?? null) : null);
-        $query = Rma::query();
-        if ($me && !in_array($role, ['Administrador','Gerente','Técnico'])) {
-            if ($role === 'Cliente') {
-                $query->where('id_persona', $me->id_persona);
-            } else {
-                // Para roles sin acceso, retorna lista vacía sin usar whereRaw (no soportado por MongoDB builder)
-                return response()->json([]);
+        try {
+            $me = Auth::user();
+            $role = Role::normalize($me ? ($me->tipo ?? $me->rol ?? null) : null);
+            $query = Rma::query();
+            if ($me && !in_array($role, ['Administrador','Gerente','Técnico'])) {
+                if ($role === 'Cliente') {
+                    $query->where('id_persona', $me->id_persona);
+                } else {
+                    // Para roles sin acceso, retorna lista vacía sin usar whereRaw (no soportado por MongoDB builder)
+                    return response()->json([]);
+                }
             }
+            return ApiPagination::respond($request, $query, function ($r) {
+                if (empty($r->rma)) {
+                    $rawId = $r->getAttribute('_id');
+                    $r->rma = is_object($rawId) ? (string) $rawId : ($rawId ?? null);
+                }
+                return $r;
+            });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'debug_error' => $e->getMessage(),
+                'debug_class' => get_class($e),
+                'debug_file' => $e->getFile() . ':' . $e->getLine(),
+                'debug_trace' => explode("\n", $e->getTraceAsString()),
+            ], 500);
         }
-        return ApiPagination::respond($request, $query, function ($r) {
-            if (empty($r->rma)) {
-                $rawId = $r->getAttribute('_id');
-                $r->rma = is_object($rawId) ? (string) $rawId : ($rawId ?? null);
-            }
-            return $r;
-        });
     }
 
     // Crear un nuevo RMA

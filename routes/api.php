@@ -35,13 +35,6 @@ Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']
 Route::middleware([\App\Http\Middleware\TokenAuth::class, \App\Http\Middleware\RolePermission::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/token/extend', [AuthController::class, 'extend']);
-    Route::get('/diag/mail', function () {
-        return response()->json([
-            'mailer' => config('mail.default'),
-            'host_set' => !empty(config('mail.mailers.smtp.host')),
-            'from_address' => config('mail.from.address'),
-        ]);
-    });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
     // RBAC efectivo para el usuario autenticado (para ocultar menú/botones en el Front)

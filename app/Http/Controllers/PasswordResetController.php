@@ -52,7 +52,7 @@ class PasswordResetController extends Controller
             });
         } catch (\Throwable $e){
             \Log::error('Error envío reset: '.$e->getMessage());
-            return response()->json(['error'=>'No se pudo enviar el correo'],500);
+            return response()->json(['error'=>'No se pudo enviar el correo','debug_error'=>$e->getMessage()],500);
         }
 
         return response()->json(['message'=>'Token enviado al correo']);

@@ -31,6 +31,20 @@ Route::post('/password/forgot', [PasswordResetController::class, 'requestToken']
 Route::post('/password/verify', [PasswordResetController::class, 'verifyToken']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 
+Route::get('/diag/mail2', function () {
+    return response()->json([
+        'config_cached' => app()->configurationIsCached(),
+        'mailer' => config('mail.default'),
+        'smtp_host' => config('mail.mailers.smtp.host'),
+        'smtp_port' => config('mail.mailers.smtp.port'),
+        'smtp_encryption' => config('mail.mailers.smtp.encryption') ?? config('mail.mailers.smtp.scheme'),
+        'smtp_username_set' => !empty(config('mail.mailers.smtp.username')),
+        'smtp_password_set' => !empty(config('mail.mailers.smtp.password')),
+        'from_address' => config('mail.from.address'),
+        'from_name' => config('mail.from.name'),
+    ]);
+});
+
 // Rutas protegidas
 Route::middleware([\App\Http\Middleware\TokenAuth::class, \App\Http\Middleware\RolePermission::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

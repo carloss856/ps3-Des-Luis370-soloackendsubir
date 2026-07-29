@@ -15,6 +15,7 @@ class PasswordResetController extends Controller
 {
     public function requestToken(Request $request)
     {
+        try {
         if ($request->has('email')) {
             $request->merge(['email' => Email::normalize($request->input('email'))]);
         }
@@ -56,6 +57,14 @@ class PasswordResetController extends Controller
         }
 
         return response()->json(['message'=>'Token enviado al correo']);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'debug_error' => $e->getMessage(),
+                'debug_class' => get_class($e),
+                'debug_file' => $e->getFile() . ':' . $e->getLine(),
+                'debug_trace' => explode("\n", $e->getTraceAsString()),
+            ], 500);
+        }
     }
 
     public function verifyToken(Request $request)
